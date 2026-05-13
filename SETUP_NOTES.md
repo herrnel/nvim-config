@@ -311,3 +311,152 @@ cd <some-project>
 dev-session            # creates "<project>" tmux session: nvim left, pi right
 # detach: Ctrl-b d   |   reattach: dev-session  (or tmux attach -t <project>)
 ```
+
+---
+
+## Session: tmux usability, theming, and dotfiles repo
+
+Walk-through of the changes applied on this machine for tmux comfort, a
+custom theme, and putting dotfiles under git with stow.
+
+### 1. tmux quality-of-life additions
+
+Appended to `~/.tmux.conf`:
+
+```tmux
+# Enable mouse: scroll wheel, click panes, drag to resize
+set -g mouse on
+
+# Bigger scrollback buffer
+set -g history-limit 50000
+
+# Vi-style keys in copy mode
+setw -g mode-keys vi
+```
+
+Reload without killing the session:
+
+```bash
+tmux source-file ~/.tmux.conf
+```
+
+**Scrollback recap**
+- Mouse wheel works once `mouse on` is set (assuming the local terminal
+  forwards mouse events).
+- Keyboard fallback: `Ctrl-b` then `[` enters copy mode → scroll with arrows /
+  `PgUp` / `PgDn` → `q` to exit.
+
+**Splits recap** — the prefix is `Ctrl-b`, *released*, then the action key:
+- `Ctrl-b %` vertical split, `Ctrl-b "` horizontal, `Ctrl-b x` close pane.
+
+### 2. Telescope `?` icons
+
+That's a **local** Nerd Font problem, not a Pi-side problem. The Pi just emits
+the codepoints; your local terminal needs a Nerd Font installed and selected
+(e.g. `JetBrainsMono Nerd Font`). Quick test from the Pi:
+
+```bash
+printf '\uf07b \ue7c5 \uf15b \uf1c9\n'
+```
+
+If those render as a folder/file/document/film, Telescope icons will too.
+
+### 3. tmux theming
+
+Tried `catppuccin/tmux` via tpm, then replaced it with a hand-rolled
+**orange + white** theme. Final tmux.conf includes:
+
+```tmux
+# === Plugins (tpm) ===
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+
+# === Custom Orange & White theme ===
+# Palette: orange #ff8c00 | light-orange #ffa733 | white #ffffff | backdrop #2a2a2a
+set -g status on
+set -g status-interval 5
+set -g status-position bottom
+set -g status-justify left
+set -g status-style 'bg=#2a2a2a,fg=#ffffff'
+
+set -g status-left-length 40
+set -g status-left '#[bg=#ff8c00,fg=#ffffff,bold]  #S #[bg=#2a2a2a,fg=#ff8c00]'
+
+set -g status-right-length 80
+set -g status-right '#[fg=#ffa733]#[bg=#ffa733,fg=#2a2a2a] #(whoami)@#h #[fg=#ff8c00]#[bg=#ff8c00,fg=#ffffff,bold] %H:%M  %d-%b '
+
+setw -g window-status-format         '#[fg=#ffffff,bg=#2a2a2a]  #I:#W  '
+setw -g window-status-current-format '#[fg=#2a2a2a,bg=#ff8c00,bold]  #I:#W  '
+setw -g window-status-separator ''
+
+set -g pane-border-style        'fg=#555555'
+set -g pane-active-border-style 'fg=#ff8c00'
+
+set -g message-style         'bg=#ff8c00,fg=#ffffff,bold'
+set -g message-command-style 'bg=#ff8c00,fg=#ffffff,bold'
+set -g mode-style            'bg=#ffa733,fg=#2a2a2a,bold'
+
+# Keep this line at the very bottom of tmux.conf
+run '~/.tmux/plugins/tpm/tpm'
+```
+
+**tpm bootstrap** (only needed once on a fresh machine):
+
+```bash
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+~/.tmux/plugins/tpm/bin/install_plugins
+```
+
+Inside tmux: `Ctrl-b I` (re)installs plugins, `Ctrl-b U` updates.
+
+### 4. Dotfiles repo with GNU Stow
+
+Decision: keep nvim and dotfiles as **two separate git repos**.
+
+- `github.com/herrnel/nvim-config` → cloned to `~/.config/nvim`
+- new `~/dotfiles/` repo manages everything else (tmux today, more later)
+
+Layout:
+
+```
+~/dotfiles/
+├── .gitignore
+├── README.md
+└── tmux/
+    └── .tmux.conf       ← symlinked to ~/.tmux.conf by `stow tmux`
+```
+
+Setup performed:
+
+```bash
+sudo apt-get install -y stow
+mkdir -p ~/dotfiles/tmux
+mv ~/.tmux.conf ~/dotfiles/tmux/.tmux.conf
+cd ~/dotfiles && stow tmux        # creates ~/.tmux.conf → dotfiles/tmux/.tmux.conf
+git init -b main && git add -A && git commit -m "Initial dotfiles: tmux"
+```
+
+**Fresh-machine install:**
+
+```bash
+sudo apt-get install -y stow git tmux
+git clone <dotfiles-repo-url> ~/dotfiles
+cd ~/dotfiles && stow tmux
+git clone https://github.com/herrnel/nvim-config.git ~/.config/nvim
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+~/.tmux/plugins/tpm/bin/install_plugins
+```
+
+**Adding a new package later:**
+
+```bash
+mkdir -p ~/dotfiles/<name>
+mv ~/<file> ~/dotfiles/<name>/<file>
+cd ~/dotfiles && stow <name>
+git add -A && git commit -m "Add <name>"
+```
+
+**Removing symlinks for a package:** `cd ~/dotfiles && stow -D <name>`.
+
+> Not yet pushed to a remote — `~/dotfiles` is local-only until a GitHub repo
+> is created and `git remote add origin …` is run.
