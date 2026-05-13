@@ -236,3 +236,78 @@ tmux attach -t $SESSION
 ```
 
 Run `dev-session` from any project directory to spin up the whole layout.
+
+---
+
+## ✅ Applied: pi + nvim live config
+
+This is what's actually wired up in this repo / system (not just suggested):
+
+### 1. Autoread autocmds (in `lua/user/options.lua`)
+
+So buffers refresh automatically when pi (or any tool) edits a file on disk:
+
+```lua
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  pattern = '*',
+  command = "if mode() != 'c' | checktime | endif",
+  desc = 'Reload buffer if file changed on disk',
+})
+vim.api.nvim_create_autocmd('FileChangedShellPost', {
+  pattern = '*',
+  command = "echohl WarningMsg | echo 'File changed on disk. Buffer reloaded.' | echohl None",
+})
+```
+
+### 2. vim-tmux-navigator plugin (in `lua/user/plugins.lua`)
+
+```lua
+{ "christoomey/vim-tmux-navigator", lazy = false },
+```
+
+Pairs with the matching bindings already in `~/.tmux.conf` so `Ctrl-h/j/k/l` jumps between Vim splits and tmux panes seamlessly.
+
+### 3. `dev-session` launcher (lives in `~/.local/bin/dev-session`)
+
+Not tracked in this repo — it's a user script. Contents:
+
+```bash
+#!/usr/bin/env bash
+# Spin up a tmux session with nvim on the left and pi on the right.
+# Usage: dev-session [session-name]
+#   Defaults session name to the current directory's basename.
+
+SESSION="${1:-$(basename "$PWD")}"
+
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  exec tmux attach -t "$SESSION"
+fi
+
+tmux new-session -d -s "$SESSION" -n main -c "$PWD"
+tmux send-keys    -t "$SESSION:main" 'nvim .' C-m
+tmux split-window -h -t "$SESSION:main" -c "$PWD"
+tmux send-keys    -t "$SESSION:main.1" 'pi' C-m
+tmux select-pane  -t "$SESSION:main.0"
+exec tmux attach  -t "$SESSION"
+```
+
+Make it executable: `chmod +x ~/.local/bin/dev-session`.
+
+### 4. PATH for `~/.local/bin`
+
+Added to both `~/.zshrc` and `~/.bashrc`:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+> ⚠️ **Heads up:** running `source ~/.zshrc` from inside a bash shell (e.g. from inside pi, which spawns `/bin/bash -c`) will throw an Oh-My-Zsh error — it's harmless. To pick up new PATH entries, either open a fresh terminal or run `exec zsh` in your interactive shell.
+
+### Usage
+
+```bash
+cd <some-project>
+dev-session            # creates "<project>" tmux session: nvim left, pi right
+# detach: Ctrl-b d   |   reattach: dev-session  (or tmux attach -t <project>)
+```
