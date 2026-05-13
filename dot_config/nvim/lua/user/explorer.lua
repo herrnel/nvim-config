@@ -1,4 +1,9 @@
 -- explorer.lua
+-- Disable netrw EARLY so nvim-tree can hijack directory opens (`nvim .`).
+-- These two must be set before nvim-tree.setup() runs.
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Check if nvim-tree is available
 local has_tree, nvim_tree = pcall(require, "nvim-tree")
 if not has_tree then
@@ -9,6 +14,14 @@ end
 -- Set up nvim-tree with error handling
 local setup_ok, _ = pcall(nvim_tree.setup, {
   sort_by = "case_sensitive",
+  -- Take over from netrw so `nvim <dir>` opens the tree instead of a
+  -- non-modifiable netrw listing.
+  disable_netrw = true,
+  hijack_netrw = true,
+  hijack_directories = {
+    enable = true,
+    auto_open = true,
+  },
   view = {
     width = 30,
   },
