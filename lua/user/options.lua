@@ -77,3 +77,16 @@ vim.cmd('packadd! nohlsearch')
 -- NOTE: plugin installation is handled by lazy.nvim in lua/user/plugins.lua;
 -- do not duplicate with vim.pack.add here.
 
+
+-- [[ Auto-reload files changed outside nvim ]]
+-- Useful when pi (or any other tool) edits a file you have open.
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  pattern = '*',
+  command = "if mode() != 'c' | checktime | endif",
+  desc = 'Reload buffer if file changed on disk',
+})
+vim.api.nvim_create_autocmd('FileChangedShellPost', {
+  pattern = '*',
+  command = "echohl WarningMsg | echo 'File changed on disk. Buffer reloaded.' | echohl None",
+})

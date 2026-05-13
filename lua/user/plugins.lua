@@ -79,5 +79,8 @@ return require("lazy").setup({
     name = "rose-pine",
     priority = 1000,
   },
+  {
+     "christoomey/vim-tmux-navigator", lazy = false 
+  },
 })
 
