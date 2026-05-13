@@ -162,3 +162,77 @@ Recommended workflow: `tmux new -s dev` → split panes → run nvim in one, dev
   - Use alternatives with similar GPU-accelerated feel: **WezTerm**, **Alacritty**, or the new **Windows Terminal** (all support true color, ligatures, undercurl — everything your nvim setup wants).
 
 If you're trying to keep a consistent terminal across Mac/Linux/Windows, **WezTerm** is the closest cross-platform analogue to Ghostty and pairs beautifully with this nvim + tmux setup.
+
+---
+
+## 🤖 Two-Pane Workflow: Code + pi
+
+A productive setup is to run nvim in one tmux pane and the [pi](https://github.com/earendil-works/pi-coding-agent) coding agent in another, so you can prompt pi for changes and keep editing without leaving the terminal.
+
+### Starting the session
+
+```bash
+tmux new -s dev
+```
+
+### Creating the two panes
+
+Default prefix is `Ctrl-b`.
+
+```
+Ctrl-b %     # split vertically (left = code, right = pi)
+Ctrl-b "     # split horizontally (top/bottom)
+```
+
+In the left pane: `nvim .`
+In the right pane: `pi`
+
+### Moving between panes
+
+This config has **vim-tmux-navigator** enabled, so no prefix needed — the same keys move between Vim splits *and* tmux panes seamlessly:
+
+| Keys              | Action                           |
+|-------------------|----------------------------------|
+| `Ctrl-h`          | move left (to code pane)         |
+| `Ctrl-l`          | move right (to pi pane)          |
+| `Ctrl-j` / `Ctrl-k` | move down/up                   |
+| `Ctrl-\`          | toggle to last pane              |
+
+So you can fly from a Vim buffer straight into pi with `Ctrl-l`, type a prompt, then `Ctrl-h` back to keep coding.
+
+### Useful extras
+
+- `Ctrl-b z` — zoom current pane fullscreen (toggle).
+- `Ctrl-b o` — cycle through panes.
+- `Ctrl-b x` — kill current pane.
+- `Ctrl-b Space` — cycle layouts.
+- `Ctrl-b d` — detach. Reattach with `tmux attach -t dev`.
+
+### Tip: auto-reload edited files in nvim
+
+When pi edits a file open in nvim, reload it with `:e` or set:
+
+```lua
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+  command = "checktime",
+})
+```
+
+### Optional: one-shot launcher script
+
+Save as `~/.local/bin/dev-session` and `chmod +x`:
+
+```bash
+#!/usr/bin/env bash
+SESSION="dev"
+tmux has-session -t $SESSION 2>/dev/null && exec tmux attach -t $SESSION
+tmux new-session -d -s $SESSION -n main
+tmux send-keys  -t $SESSION:main 'nvim .' C-m
+tmux split-window -h -t $SESSION:main
+tmux send-keys  -t $SESSION:main.1 'pi' C-m
+tmux select-pane -t $SESSION:main.0
+tmux attach -t $SESSION
+```
+
+Run `dev-session` from any project directory to spin up the whole layout.
