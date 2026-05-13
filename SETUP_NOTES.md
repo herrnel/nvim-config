@@ -230,6 +230,109 @@ git push
 
 ---
 
+## 🔤 Nerd Font setup (icons in nvim/tmux)
+
+Icon glyphs (folder/file/git/lang icons in Telescope, nvim-tree, lualine,
+etc.) are rendered by **your terminal's font** — not by anything on the Linux
+side. So fixing missing/`?` icons means installing a Nerd Font in the
+terminal that's actually drawing pixels (on WSL = the Windows-side terminal).
+
+### Quick test
+
+Run in any shell:
+
+```bash
+printf '\uf07b folder \uf15b file \ue7c5 lua \uf1c9 movie \uf09b github  branch\n'
+```
+
+If those render as recognizable icons → you're good. If you see `?`, boxes,
+or blank spots → install a Nerd Font and select it in your terminal.
+
+### Recommended font
+
+**JetBrainsMono Nerd Font** — clean, monospaced, full glyph coverage,
+works in tmux. Alternatives: FiraCode Nerd Font, Hack Nerd Font, MesloLGS NF.
+
+### Linux side (already installed on this machine)
+
+```bash
+mkdir -p ~/.local/share/fonts/JetBrainsMonoNerdFont
+curl -fsSLo /tmp/JBM.zip \
+  https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+unzip -oq /tmp/JBM.zip -d ~/.local/share/fonts/JetBrainsMonoNerdFont/
+fc-cache -f ~/.local/share/fonts
+fc-list | grep -i 'jetbrainsmono nerd'   # verify
+```
+
+This is mostly a no-op for WSL terminals (Windows draws the glyphs), but it
+helps if you ever run a Linux-native GUI terminal or do remote rendering.
+
+### Windows side (the one that actually matters for WSL)
+
+#### Option 1 — winget (cleanest)
+
+In **PowerShell**:
+
+```powershell
+winget install --id=DEVCOM.JetBrainsMonoNerdFont -e
+# or browse:  winget search nerd-fonts
+```
+
+#### Option 2 — Scoop
+
+```powershell
+scoop bucket add nerd-fonts
+scoop install nerd-fonts/JetBrainsMono-NF
+```
+
+#### Option 3 — Manual
+
+1. Download `JetBrainsMono.zip` from <https://www.nerdfonts.com/font-downloads>.
+2. Extract, select all `.ttf` files → right-click → **Install for all users**.
+
+### Select the font in your terminal
+
+**Windows Terminal** — `Settings` → your WSL profile → `Appearance` →
+`Font face` = `JetBrainsMono Nerd Font` (or edit `settings.json`):
+
+```json
+"profiles": {
+  "defaults": { "font": { "face": "JetBrainsMono Nerd Font", "size": 12 } }
+}
+```
+
+**WezTerm** — `~/.wezterm.lua`:
+
+```lua
+config.font = wezterm.font('JetBrainsMono Nerd Font')
+config.font_size = 12
+```
+
+**Ghostty** (Linux/macOS) — `~/.config/ghostty/config`:
+
+```
+font-family = JetBrainsMono Nerd Font
+font-size = 12
+```
+
+**Alacritty** — `~/.config/alacritty/alacritty.toml`:
+
+```toml
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+```
+
+### After installing
+
+1. Restart the terminal (Windows Terminal needs a full restart to pick up
+   newly installed system fonts).
+2. Re-open tmux / nvim — Telescope, nvim-tree, and devicons will now show
+   actual glyphs instead of `?`.
+3. If still broken inside tmux specifically, check `echo $TERM` (should be
+   `tmux-256color`) — already set in your `dot_tmux.conf`.
+
+---
+
 ## 🗑️ History
 
 This repo was originally `nvim-config` and managed only `~/.config/nvim/`.
