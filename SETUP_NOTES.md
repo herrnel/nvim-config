@@ -1,289 +1,71 @@
-# Your Neovim Setup — Rundown
+# Dotfiles — Neovim + Tmux (managed with chezmoi)
 
-## 📁 Structure
+This single repo contains **all** your tracked configs (nvim, tmux, future
+shells, etc.) and is deployed with [chezmoi](https://www.chezmoi.io/).
 
-```
-~/.config/nvim/
-├── init.lua              # Entry point – loads modules in order
-├── lazy-lock.json        # Pinned plugin versions (commit this!)
-├── lua/user/
-│   ├── options.lua       # Core vim options + leader key
-│   ├── keymaps.lua       # Global keymaps
-│   ├── plugins.lua       # lazy.nvim bootstrap + plugin list
-│   ├── treesitter.lua    # Syntax highlighting / parsers
-│   ├── lsp.lua           # Mason + LSP servers + keymaps
-│   ├── completion.lua    # nvim-cmp autocomplete + snippets
-│   ├── telescope.lua     # Fuzzy finder
-│   ├── whichkey.lua      # Leader-key popup helper
-│   ├── explorer.lua      # nvim-tree file explorer
-│   └── theme.lua         # Catppuccin (mocha)
-├── after/ ftplugin/ plugin/ syntax/   (currently empty)
-└── nvim-pack-lock.json
-```
+> Renamed in spirit from `nvim-config` → dotfiles. The GitHub repo URL can
+> be renamed in the GitHub UI when convenient; chezmoi will follow.
 
-## ✨ What You Can Do With It
-
-**Core editing**
-- Leader key = `<Space>`
-- Relative + absolute line numbers, cursorline, OS clipboard sync, smart case search
-- Highlight-on-yank, `:GitBlameLine` custom command
-- Window nav with `<Alt-h/j/k/l>` (works in normal, insert, terminal modes)
-- `<Esc>` exits terminal mode
-
-**LSP (auto-installed via Mason)**
-- Languages: Lua, Python, TypeScript/JS, Rust, Go, C/C++
-- `gd` definition · `gD` declaration · `gi` implementation · `gr` references
-- `K` hover · `<C-k>` signature · `<leader>rn` rename · `<leader>ca` code action · `<leader>lf` format
-- Diagnostic icons in sign column, virtual text with `●`
-
-**Autocomplete (nvim-cmp)**
-- Sources: LSP, LuaSnip snippets, buffer, path
-- `<Tab>/<S-Tab>` cycle · `<CR>` confirm · `<C-Space>` trigger · `<C-b>/<C-f>` scroll docs
-- Command-line completion enabled too
-
-**Treesitter** — modern highlighting + indent for 15+ languages, `<CR>`/`<BS>` for incremental selection.
-
-**Telescope (`<leader>f…`)**
-- `ff` files · `fg` live grep · `fb` buffers · `fh` help · `fr` recent files · `fd`/`fr` LSP defs/refs
-
-**Other**
-- `<leader>e` toggle nvim-tree file explorer
-- `<leader>b{n,p,d}` buffer next/prev/delete
-- which-key popup shows all `<leader>` mappings as you type
-- Catppuccin Mocha theme
-
----
-
-## 🚀 Sharing Across Devices via Git
-
-### One-time setup on this machine
-
-```bash
-cd ~/.config/nvim
-
-# .gitignore – keep noise out
-cat > .gitignore <<'EOF'
-# Plugin install dirs live in stdpath('data'), not here, so nothing to ignore there.
-# But just in case:
-.luarc.json
-*.log
-EOF
-
-git init -b main
-git add .
-git commit -m "Initial nvim config"
-
-# Create an empty repo on GitHub first (no README), then:
-git remote add origin git@github.com:<your-username>/nvim-config.git
-git push -u origin main
-```
-
-**Important:** commit `lazy-lock.json` — it pins plugin versions so every machine gets the exact same setup. Run `:Lazy restore` on a new machine to honor it, or `:Lazy sync` to update.
-
-### On a new machine
-
-```bash
-# Back up anything existing
-mv ~/.config/nvim ~/.config/nvim.bak 2>/dev/null
-
-git clone git@github.com:<your-username>/nvim-config.git ~/.config/nvim
-nvim           # lazy.nvim bootstraps, installs plugins
-# In nvim: :Lazy restore   then   :Mason   to verify LSP servers
-```
-
-### Suggested daily workflow
-
-1. Edit config in nvim, test, commit:
-   ```bash
-   cd ~/.config/nvim && git add -A && git commit -m "tweak: ..." && git push
-   ```
-2. On other machines: `cd ~/.config/nvim && git pull && nvim +":Lazy sync" +qa`
-3. Use **branches** for experiments (`git checkout -b try-lualine`) so you can roll back easily.
-4. Keep machine-specific stuff out of tracked files — put it in `lua/user/local.lua` and add to `.gitignore`, then `pcall(require, 'user.local')` from `init.lua`.
-5. Optional: manage with [`chezmoi`](https://chezmoi.io) or GNU `stow` if you want to bundle nvim with your other dotfiles (`.zshrc`, `tmux.conf`, etc.) in one repo.
-
----
-
-## 🪟 Adding Tmux Support
-
-There's nothing tmux-specific in your config yet. The most useful additions:
-
-**1. Install tmux** (`sudo apt install tmux` / `brew install tmux`).
-
-**2. Seamless pane navigation between nvim splits & tmux panes** — add to `lua/user/plugins.lua`:
-
-```lua
-{ "christoomey/vim-tmux-navigator", lazy = false },
-```
-
-Then in `~/.tmux.conf`:
-
-```tmux
-# Smart pane switching with awareness of Vim splits.
-is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
-bind -n C-h if-shell "$is_vim" "send-keys C-h" "select-pane -L"
-bind -n C-j if-shell "$is_vim" "send-keys C-j" "select-pane -D"
-bind -n C-k if-shell "$is_vim" "send-keys C-k" "select-pane -U"
-bind -n C-l if-shell "$is_vim" "send-keys C-l" "select-pane -R"
-
-# True color + undercurl
-set -g default-terminal "tmux-256color"
-set -as terminal-features ",xterm-256color:RGB"
-set -g focus-events on
-set -sg escape-time 10
-```
-
-This gives you `Ctrl-h/j/k/l` to jump across both nvim splits *and* tmux panes uniformly — note this differs from your current `<Alt-…>` mappings, so they happily coexist.
-
-**3. Optional plugins**
-- `aserowy/tmux.nvim` — copy-mode integration & resizing
-- `preservim/vimux` — run shell commands in a tmux pane from nvim
-
-**4. Nice quality-of-life tmux config**
-```tmux
-set -g mouse on
-set -g base-index 1
-setw -g pane-base-index 1
-set -g history-limit 50000
-```
-
-Recommended workflow: `tmux new -s dev` → split panes → run nvim in one, dev server / tests in others. Detach with `Ctrl-b d`, reattach later with `tmux attach -t dev`. Survives SSH disconnects.
-
----
-
-## 👻 Does Ghostty Support Windows?
-
-**Not officially, no.** As of now (2026):
-
-- Ghostty officially supports **macOS** and **Linux** only.
-- **Windows is not supported.** Mitchell Hashimoto has said Windows is a long-term goal but is not a near-term priority; the GTK backend isn't viable on Windows and a native backend would need to be written.
-- Workarounds on Windows:
-  - Use **WSL2** + a Linux terminal (you still need a Windows host terminal to display it — Ghostty doesn't run there).
-  - Use alternatives with similar GPU-accelerated feel: **WezTerm**, **Alacritty**, or the new **Windows Terminal** (all support true color, ligatures, undercurl — everything your nvim setup wants).
-
-If you're trying to keep a consistent terminal across Mac/Linux/Windows, **WezTerm** is the closest cross-platform analogue to Ghostty and pairs beautifully with this nvim + tmux setup.
-
----
-
-## 🤖 Two-Pane Workflow: Code + pi
-
-A productive setup is to run nvim in one tmux pane and the [pi](https://github.com/earendil-works/pi-coding-agent) coding agent in another, so you can prompt pi for changes and keep editing without leaving the terminal.
-
-### Starting the session
-
-```bash
-tmux new -s dev
-```
-
-### Creating the two panes
-
-Default prefix is `Ctrl-b`.
+## 📁 Repo layout (chezmoi conventions)
 
 ```
-Ctrl-b %     # split vertically (left = code, right = pi)
-Ctrl-b "     # split horizontally (top/bottom)
+~/.local/share/chezmoi/         ← chezmoi's source dir = this git repo
+├── dot_tmux.conf               → ~/.tmux.conf
+├── dot_config/
+│   └── nvim/                   → ~/.config/nvim/
+│       ├── init.lua
+│       ├── lazy-lock.json
+│       ├── nvim-pack-lock.json
+│       └── lua/user/
+│           ├── options.lua
+│           ├── keymaps.lua
+│           ├── plugins.lua
+│           ├── treesitter.lua
+│           ├── lsp.lua
+│           ├── completion.lua
+│           ├── telescope.lua
+│           ├── whichkey.lua
+│           ├── explorer.lua
+│           └── theme.lua
+├── SETUP_NOTES.md              (this file — not deployed, pure docs)
+└── .gitignore
 ```
 
-In the left pane: `nvim .`
-In the right pane: `pi`
+**Naming rules cheat-sheet** (chezmoi):
+- `dot_<name>` → `~/.<name>` (so `dot_tmux.conf` becomes `~/.tmux.conf`)
+- Subdirs follow the same pattern recursively
+- Files **without** a recognized prefix at the source root are ignored — that's
+  why `SETUP_NOTES.md` and `README.md` stay at the source root and are not
+  deployed anywhere.
 
-### Moving between panes
+## ✨ What's wired up
 
-This config has **vim-tmux-navigator** enabled, so no prefix needed — the same keys move between Vim splits *and* tmux panes seamlessly:
+### Neovim (unchanged from before)
+- Leader = `<Space>`. Catppuccin Mocha theme.
+- LSP via Mason: Lua, Python, TS/JS, Rust, Go, C/C++.
+- Telescope (`<leader>f…`), nvim-tree (`<leader>e`), which-key, nvim-cmp,
+  Treesitter, vim-tmux-navigator.
+- Autoread autocmd reloads buffers when external tools (e.g. `pi`) modify files.
 
-| Keys              | Action                           |
-|-------------------|----------------------------------|
-| `Ctrl-h`          | move left (to code pane)         |
-| `Ctrl-l`          | move right (to pi pane)          |
-| `Ctrl-j` / `Ctrl-k` | move down/up                   |
-| `Ctrl-\`          | toggle to last pane              |
+### Tmux
+- True color + focus events + 10ms escape time.
+- Mouse on, 50k scrollback, vi copy-mode, base index 1.
+- `Ctrl-h/j/k/l` jumps seamlessly between nvim splits and tmux panes
+  (matches the `vim-tmux-navigator` plugin).
+- Custom orange/white status theme.
+- tpm + `tmux-sensible`.
 
-So you can fly from a Vim buffer straight into pi with `Ctrl-l`, type a prompt, then `Ctrl-h` back to keep coding.
-
-### Useful extras
-
-- `Ctrl-b z` — zoom current pane fullscreen (toggle).
-- `Ctrl-b o` — cycle through panes.
-- `Ctrl-b x` — kill current pane.
-- `Ctrl-b Space` — cycle layouts.
-- `Ctrl-b d` — detach. Reattach with `tmux attach -t dev`.
-
-### Tip: auto-reload edited files in nvim
-
-When pi edits a file open in nvim, reload it with `:e` or set:
-
-```lua
-vim.opt.autoread = true
-vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
-  command = "checktime",
-})
-```
-
-### Optional: one-shot launcher script
-
-Save as `~/.local/bin/dev-session` and `chmod +x`:
+### `dev-session` launcher (`~/.local/bin/dev-session`)
+Not deployed by chezmoi (it's a user script, not a config). Contents:
 
 ```bash
 #!/usr/bin/env bash
-SESSION="dev"
-tmux has-session -t $SESSION 2>/dev/null && exec tmux attach -t $SESSION
-tmux new-session -d -s $SESSION -n main
-tmux send-keys  -t $SESSION:main 'nvim .' C-m
-tmux split-window -h -t $SESSION:main
-tmux send-keys  -t $SESSION:main.1 'pi' C-m
-tmux select-pane -t $SESSION:main.0
-tmux attach -t $SESSION
-```
-
-Run `dev-session` from any project directory to spin up the whole layout.
-
----
-
-## ✅ Applied: pi + nvim live config
-
-This is what's actually wired up in this repo / system (not just suggested):
-
-### 1. Autoread autocmds (in `lua/user/options.lua`)
-
-So buffers refresh automatically when pi (or any tool) edits a file on disk:
-
-```lua
-vim.opt.autoread = true
-vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
-  pattern = '*',
-  command = "if mode() != 'c' | checktime | endif",
-  desc = 'Reload buffer if file changed on disk',
-})
-vim.api.nvim_create_autocmd('FileChangedShellPost', {
-  pattern = '*',
-  command = "echohl WarningMsg | echo 'File changed on disk. Buffer reloaded.' | echohl None",
-})
-```
-
-### 2. vim-tmux-navigator plugin (in `lua/user/plugins.lua`)
-
-```lua
-{ "christoomey/vim-tmux-navigator", lazy = false },
-```
-
-Pairs with the matching bindings already in `~/.tmux.conf` so `Ctrl-h/j/k/l` jumps between Vim splits and tmux panes seamlessly.
-
-### 3. `dev-session` launcher (lives in `~/.local/bin/dev-session`)
-
-Not tracked in this repo — it's a user script. Contents:
-
-```bash
-#!/usr/bin/env bash
-# Spin up a tmux session with nvim on the left and pi on the right.
-# Usage: dev-session [session-name]
-#   Defaults session name to the current directory's basename.
-
+# Spin up a tmux session: nvim left, pi right.
+# Usage: dev-session [session-name]   (default: basename of $PWD)
 SESSION="${1:-$(basename "$PWD")}"
-
 if tmux has-session -t "$SESSION" 2>/dev/null; then
   exec tmux attach -t "$SESSION"
 fi
-
 tmux new-session -d -s "$SESSION" -n main -c "$PWD"
 tmux send-keys    -t "$SESSION:main" 'nvim .' C-m
 tmux split-window -h -t "$SESSION:main" -c "$PWD"
@@ -292,171 +74,165 @@ tmux select-pane  -t "$SESSION:main.0"
 exec tmux attach  -t "$SESSION"
 ```
 
-Make it executable: `chmod +x ~/.local/bin/dev-session`.
+`chmod +x ~/.local/bin/dev-session`. Requires `~/.local/bin` on `PATH` (already
+in `~/.zshrc` and `~/.bashrc`).
 
-### 4. PATH for `~/.local/bin`
+---
 
-Added to both `~/.zshrc` and `~/.bashrc`:
+## 🚀 Daily workflow
+
+### Editing configs
+
+Two equivalent patterns — pick your favorite:
+
+**A. Edit via chezmoi (recommended)** — opens the *source* file, auto-applies on save:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+chezmoi edit ~/.tmux.conf
+chezmoi edit ~/.config/nvim/init.lua
 ```
 
-> ⚠️ **Heads up:** running `source ~/.zshrc` from inside a bash shell (e.g. from inside pi, which spawns `/bin/bash -c`) will throw an Oh-My-Zsh error — it's harmless. To pick up new PATH entries, either open a fresh terminal or run `exec zsh` in your interactive shell.
-
-### Usage
+**B. Edit deployed file in place, then re-add:**
 
 ```bash
-cd <some-project>
-dev-session            # creates "<project>" tmux session: nvim left, pi right
-# detach: Ctrl-b d   |   reattach: dev-session  (or tmux attach -t <project>)
+nvim ~/.config/nvim/init.lua          # edit normally
+chezmoi re-add                        # pull changes back into the source repo
+```
+
+Handy alias to drop in `~/.zshrc`:
+
+```bash
+alias ce='chezmoi edit'
+alias cs='chezmoi status'
+alias ca='chezmoi apply -v'
+alias cd-cm='cd $(chezmoi source-path)'
+```
+
+### Committing & pushing
+
+```bash
+chezmoi cd                            # jumps you into the source repo
+git add -A && git commit -m "tweak: ..."
+git push
+exit                                  # back to where you were
+```
+
+### On a new machine
+
+```bash
+# Prereqs
+sudo apt-get install -y git tmux curl
+
+# 1. Install chezmoi
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
+export PATH="$HOME/.local/bin:$PATH"
+
+# 2. Pull dotfiles + deploy
+chezmoi init https://github.com/herrnel/nvim-config.git   # (or new dotfiles URL)
+chezmoi apply -v
+
+# 3. Tmux plugin manager + plugins
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+~/.tmux/plugins/tpm/bin/install_plugins
+
+# 4. Neovim plugins (lazy.nvim bootstraps itself, then restore pinned versions)
+nvim --headless "+Lazy! restore" +qa
+
+# 5. dev-session launcher
+mkdir -p ~/.local/bin
+# (paste the script above into ~/.local/bin/dev-session, then:)
+chmod +x ~/.local/bin/dev-session
+```
+
+### Pulling changes from another machine
+
+```bash
+chezmoi update            # = git pull + chezmoi apply
+```
+
+### Diff / dry-run before applying
+
+```bash
+chezmoi diff              # show what would change
+chezmoi apply --dry-run -v
 ```
 
 ---
 
-## Session: tmux usability, theming, and dotfiles repo
-
-Walk-through of the changes applied on this machine for tmux comfort, a
-custom theme, and putting dotfiles under git with stow.
-
-### 1. tmux quality-of-life additions
-
-Appended to `~/.tmux.conf`:
-
-```tmux
-# Enable mouse: scroll wheel, click panes, drag to resize
-set -g mouse on
-
-# Bigger scrollback buffer
-set -g history-limit 50000
-
-# Vi-style keys in copy mode
-setw -g mode-keys vi
-```
-
-Reload without killing the session:
+## 🪟 Using tmux + the `dev-session` workflow
 
 ```bash
-tmux source-file ~/.tmux.conf
+cd <some-project>
+dev-session               # creates tmux session "<project>": nvim left, pi right
 ```
 
-**Scrollback recap**
-- Mouse wheel works once `mouse on` is set (assuming the local terminal
-  forwards mouse events).
-- Keyboard fallback: `Ctrl-b` then `[` enters copy mode → scroll with arrows /
-  `PgUp` / `PgDn` → `q` to exit.
+Inside:
 
-**Splits recap** — the prefix is `Ctrl-b`, *released*, then the action key:
-- `Ctrl-b %` vertical split, `Ctrl-b "` horizontal, `Ctrl-b x` close pane.
+| Keys                | Action |
+|---------------------|--------|
+| `Ctrl-h/j/k/l`      | Move across nvim splits *and* tmux panes uniformly |
+| `Ctrl-b z`          | Zoom current pane (toggle) |
+| `Ctrl-b d`          | Detach (re-attach later with `dev-session` or `tmux attach -t <name>`) |
+| `Ctrl-b %` / `"`    | New vertical / horizontal split |
+| `Ctrl-b [`          | Enter copy mode (vi keys, `q` to exit) |
+| `Ctrl-b I`          | Install tmux plugins (after editing tpm `@plugin` lines) |
+| `Ctrl-b r`          | (Not bound by default) — reload conf with `tmux source-file ~/.tmux.conf` |
 
-### 2. Telescope `?` icons
+---
 
-That's a **local** Nerd Font problem, not a Pi-side problem. The Pi just emits
-the codepoints; your local terminal needs a Nerd Font installed and selected
-(e.g. `JetBrainsMono Nerd Font`). Quick test from the Pi:
+## 🤖 Two-pane workflow: nvim + pi
+
+Already covered by `dev-session`. The autoread autocmd in
+`dot_config/nvim/lua/user/options.lua` ensures nvim reloads any file that pi
+edits on disk:
+
+```lua
+vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  pattern = '*',
+  command = "if mode() != 'c' | checktime | endif",
+})
+vim.api.nvim_create_autocmd('FileChangedShellPost', {
+  pattern = '*',
+  command = "echohl WarningMsg | echo 'File changed on disk. Buffer reloaded.' | echohl None",
+})
+```
+
+> **Heads up:** running `source ~/.zshrc` from a bash subshell (e.g. inside pi,
+> which spawns `/bin/bash -c`) throws an Oh-My-Zsh error — harmless. To pick up
+> new PATH entries open a fresh terminal or `exec zsh`.
+
+---
+
+## 🌍 Cross-OS notes
+
+chezmoi works natively on **Linux, macOS, WSL, and Windows** (single Go
+binary). For per-machine differences use templating (`*.tmpl` files,
+`.chezmoi.toml.tmpl` config), e.g.:
+
+```yaml
+# dot_gitconfig.tmpl
+[user]
+  email = {{ if eq .chezmoi.os "darwin" }}me@personal.com{{ else }}me@work.com{{ end }}
+```
+
+Run `chezmoi data` to see all available variables (`.chezmoi.os`,
+`.chezmoi.hostname`, `.chezmoi.username`, etc.).
+
+### Adding more configs later
 
 ```bash
-printf '\uf07b \ue7c5 \uf15b \uf1c9\n'
+chezmoi add ~/.gitconfig          # imports it into the source repo (becomes dot_gitconfig)
+chezmoi add ~/.config/ghostty/config
+chezmoi cd && git add -A && git commit -m "Add gitconfig + ghostty"
+git push
 ```
 
-If those render as a folder/file/document/film, Telescope icons will too.
+---
 
-### 3. tmux theming
+## 🗑️ History
 
-Tried `catppuccin/tmux` via tpm, then replaced it with a hand-rolled
-**orange + white** theme. Final tmux.conf includes:
-
-```tmux
-# === Plugins (tpm) ===
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
-
-# === Custom Orange & White theme ===
-# Palette: orange #ff8c00 | light-orange #ffa733 | white #ffffff | backdrop #2a2a2a
-set -g status on
-set -g status-interval 5
-set -g status-position bottom
-set -g status-justify left
-set -g status-style 'bg=#2a2a2a,fg=#ffffff'
-
-set -g status-left-length 40
-set -g status-left '#[bg=#ff8c00,fg=#ffffff,bold]  #S #[bg=#2a2a2a,fg=#ff8c00]'
-
-set -g status-right-length 80
-set -g status-right '#[fg=#ffa733]#[bg=#ffa733,fg=#2a2a2a] #(whoami)@#h #[fg=#ff8c00]#[bg=#ff8c00,fg=#ffffff,bold] %H:%M  %d-%b '
-
-setw -g window-status-format         '#[fg=#ffffff,bg=#2a2a2a]  #I:#W  '
-setw -g window-status-current-format '#[fg=#2a2a2a,bg=#ff8c00,bold]  #I:#W  '
-setw -g window-status-separator ''
-
-set -g pane-border-style        'fg=#555555'
-set -g pane-active-border-style 'fg=#ff8c00'
-
-set -g message-style         'bg=#ff8c00,fg=#ffffff,bold'
-set -g message-command-style 'bg=#ff8c00,fg=#ffffff,bold'
-set -g mode-style            'bg=#ffa733,fg=#2a2a2a,bold'
-
-# Keep this line at the very bottom of tmux.conf
-run '~/.tmux/plugins/tpm/tpm'
-```
-
-**tpm bootstrap** (only needed once on a fresh machine):
-
-```bash
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-~/.tmux/plugins/tpm/bin/install_plugins
-```
-
-Inside tmux: `Ctrl-b I` (re)installs plugins, `Ctrl-b U` updates.
-
-### 4. Dotfiles repo with GNU Stow
-
-Decision: keep nvim and dotfiles as **two separate git repos**.
-
-- `github.com/herrnel/nvim-config` → cloned to `~/.config/nvim`
-- new `~/dotfiles/` repo manages everything else (tmux today, more later)
-
-Layout:
-
-```
-~/dotfiles/
-├── .gitignore
-├── README.md
-└── tmux/
-    └── .tmux.conf       ← symlinked to ~/.tmux.conf by `stow tmux`
-```
-
-Setup performed:
-
-```bash
-sudo apt-get install -y stow
-mkdir -p ~/dotfiles/tmux
-mv ~/.tmux.conf ~/dotfiles/tmux/.tmux.conf
-cd ~/dotfiles && stow tmux        # creates ~/.tmux.conf → dotfiles/tmux/.tmux.conf
-git init -b main && git add -A && git commit -m "Initial dotfiles: tmux"
-```
-
-**Fresh-machine install:**
-
-```bash
-sudo apt-get install -y stow git tmux
-git clone <dotfiles-repo-url> ~/dotfiles
-cd ~/dotfiles && stow tmux
-git clone https://github.com/herrnel/nvim-config.git ~/.config/nvim
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-~/.tmux/plugins/tpm/bin/install_plugins
-```
-
-**Adding a new package later:**
-
-```bash
-mkdir -p ~/dotfiles/<name>
-mv ~/<file> ~/dotfiles/<name>/<file>
-cd ~/dotfiles && stow <name>
-git add -A && git commit -m "Add <name>"
-```
-
-**Removing symlinks for a package:** `cd ~/dotfiles && stow -D <name>`.
-
-> Not yet pushed to a remote — `~/dotfiles` is local-only until a GitHub repo
-> is created and `git remote add origin …` is run.
+This repo was originally `nvim-config` and managed only `~/.config/nvim/`.
+On 2026-05-13 it was restructured into chezmoi layout to also manage
+`~/.tmux.conf` (previously a separate `~/dotfiles/` stow repo, now removed).
+Git history is preserved through `git mv`.
