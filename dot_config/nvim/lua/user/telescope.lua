@@ -44,9 +44,15 @@ pcall(function() require('telescope').load_extension('fzf') end)
 local builtin_ok, builtin = pcall(require, 'telescope.builtin')
 if builtin_ok then
   vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = "Find files" })
-  vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = "Live grep" })
+  vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = "Live grep (project)" })
   vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = "Buffers" })
   vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = "Help tags" })
+  -- Search inside the current buffer (plain-text fuzzy match, with preview)
+  vim.keymap.set('n', '<leader>/', builtin.current_buffer_fuzzy_find,
+    { desc = "Search in current buffer (fuzzy)" })
+  -- Search for the word under the cursor across the project
+  vim.keymap.set('n', '<leader>fw', builtin.grep_string,
+    { desc = "Grep word under cursor (project)" })
   -- LSP-related searches
   vim.keymap.set('n', '<leader>fd', builtin.lsp_definitions, { desc = "Find definitions" })
   vim.keymap.set('n', '<leader>fr', builtin.lsp_references, { desc = "Find references" })

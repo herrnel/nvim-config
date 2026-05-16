@@ -79,8 +79,64 @@ return require("lazy").setup({
     name = "rose-pine",
     priority = 1000,
   },
+
+  -- Vague theme
+  {
+    "vague2k/vague.nvim",
+    name = "vague",
+    priority = 1000,
+  },
   {
      "christoomey/vim-tmux-navigator", lazy = false 
+  },
+
+  -- Pretty in-buffer markdown rendering
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-tree/nvim-web-devicons",
+    },
+    ft = { "markdown" },
+  },
+
+  -- Browser-based live markdown preview (real HTML render)
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+    ft = { "markdown" },
+    build = function() vim.fn["mkdp#util#install"]() end,
+  },
+
+  -- Auto-close brackets / quotes and place the cursor between them
+  {
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    dependencies = { "hrsh7th/nvim-cmp" },
+    config = function()
+      local npairs = require("nvim-autopairs")
+      npairs.setup({
+        check_ts = true,                 -- use treesitter to avoid pairing in strings/comments
+        enable_check_bracket_line = true,-- don't add a pair if next char is a closing one
+        fast_wrap = {                    -- <M-e> in insert mode wraps the next text in pairs
+          map = "<M-e>",
+          chars = { "{", "[", "(", '"', "'" },
+          end_key = "$",
+          keys = "qwertyuiopzxcvbnmasdfghjkl",
+          check_comma = true,
+          highlight = "Search",
+          highlight_grey = "Comment",
+        },
+      })
+
+      -- Make autopairs cooperate with nvim-cmp: when you accept a function
+      -- completion, automatically insert the `()`.
+      local has_cmp, cmp = pcall(require, "cmp")
+      if has_cmp then
+        local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+        cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+      end
+    end,
   },
 })
 

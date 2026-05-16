@@ -14,6 +14,21 @@ vim.keymap.set({ 'n' }, '<A-j>', '<C-w>j')
 vim.keymap.set({ 'n' }, '<A-k>', '<C-w>k')
 vim.keymap.set({ 'n' }, '<A-l>', '<C-w>l')
 
+-- [[ Comment toggling — VS Code-style Ctrl-/ ]]
+-- Most terminals send <C-_> when you press Ctrl-/ (it's an ASCII quirk),
+-- so bind both for safety. Uses Neovim's built-in `gc` operator (0.10+).
+--   - Normal mode: toggle comment on the current line
+--   - Visual mode: toggle comment on the selection (and stay in visual)
+for _, key in ipairs({ '<C-_>', '<C-/>' }) do
+  vim.keymap.set('n', key, 'gcc',
+    { remap = true, desc = 'Toggle comment (current line)' })
+  vim.keymap.set('x', key, 'gc',
+    { remap = true, desc = 'Toggle comment (selection)' })
+  -- Also from insert mode, in case muscle memory hits it there too:
+  vim.keymap.set('i', key, '<Esc>gcca',
+    { remap = true, desc = 'Toggle comment (current line)' })
+end
+
 -- [[ Telescope keymaps ]]
 local ok, builtin = pcall(require, 'telescope.builtin')
 if ok then

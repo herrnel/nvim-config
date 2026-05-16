@@ -19,6 +19,7 @@ require('user.telescope') -- Often integrates with LSP
 -- Optional UI / helpers
 require('user.whichkey')
 require('user.explorer')
+require('user.markdown')
 
 -- Configure UI components last
 require('user.theme')

@@ -10,12 +10,15 @@ vim.g.mapleader = ' '
 -- To see documentation for an option, you can use `:h 'optionname'`, for example `:h 'number'`
 -- (Note the single quotes)
 
+-- Enable 24-bit RGB color in the terminal (required by modern colorschemes like vague)
+vim.o.termguicolors = true
+
 -- Print the line number in front of each line
 vim.o.number = true
 
 -- Use relative line numbers, so that it is easier to jump with j, k. This will affect the 'number'
 -- option above, see `:h number_relativenumber`
-vim.o.relativenumber = true
+vim.o.relativenumber = false
 
 -- Sync clipboard between OS and Neovim. Schedule the setting after `UiEnter` because it can
 -- increase startup-time. Remove this option if you want your OS clipboard to remain independent.
@@ -31,7 +34,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 
 -- Highlight the line where the cursor is on
-vim.o.cursorline = true
+vim.o.cursorline = false
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.o.scrolloff = 10
