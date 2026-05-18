@@ -21,10 +21,14 @@ return require("lazy").setup({
   "nvim-lua/plenary.nvim", -- Utility functions (dependency for many plugins)
 
   -- Treesitter for syntax highlighting (load early)
+  -- NOTE: on the `main` branch, nvim-treesitter does NOT support lazy-loading
+  -- and the old `require('nvim-treesitter.configs').setup{}` API is gone.
+  -- Configuration lives in lua/user/treesitter.lua using the new API.
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy = false,
     build = ":TSUpdate",
-    priority = 100, -- Load early
   },
 
   -- Language Server Protocol support
