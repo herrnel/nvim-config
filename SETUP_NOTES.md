@@ -122,6 +122,9 @@ exit                                  # back to where you were
 ```bash
 # Prereqs
 sudo apt-get install -y git tmux curl
+# Neovim itself (>= 0.10). apt's may be old; the official tarball is newer:
+#   curl -fsSLo /tmp/nvim.tgz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-arm64.tar.gz
+#   tar xzf /tmp/nvim.tgz -C ~/.local --strip-components=1   # -> ~/.local/bin/nvim
 
 # 1. Install chezmoi
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
@@ -135,10 +138,23 @@ chezmoi apply -v
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 ~/.tmux/plugins/tpm/bin/install_plugins
 
-# 4. Neovim plugins (lazy.nvim bootstraps itself, then restore pinned versions)
-nvim --headless "+Lazy! restore" +qa
+# 4. Treesitter toolchain (REQUIRED — nvim-treesitter is on the `main` branch,
+#    which compiles parsers with the external `tree-sitter` CLI + a C compiler).
+#    Without these, parsers download but fail to build:
+#      Error during "tree-sitter build": ENOENT ... (cmd): 'tree-sitter'
+sudo apt-get install -y gcc            # or any C compiler (cc/clang)
+# tree-sitter CLI (prebuilt; pick the asset matching your arch, e.g. arm64/x64):
+curl -fsSLo /tmp/ts.gz \
+  https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-arm64.gz
+gunzip -f /tmp/ts.gz && chmod +x /tmp/ts && mv /tmp/ts ~/.local/bin/tree-sitter
+tree-sitter --version                  # verify
 
-# 5. dev-session launcher
+# 5. Neovim plugins (lazy.nvim bootstraps itself, then restore pinned versions)
+nvim --headless "+Lazy! restore" +qa
+# Parsers compile asynchronously on first launch; or force them synchronously:
+#   nvim --headless "+lua require('nvim-treesitter').install({'lua','python','rust','go','javascript','typescript','tsx','html','css','json','yaml','toml','markdown','markdown_inline','bash','vim','vimdoc','query'}):wait(300000)" +qa
+
+# 6. dev-session launcher
 mkdir -p ~/.local/bin
 # (paste the script above into ~/.local/bin/dev-session, then:)
 chmod +x ~/.local/bin/dev-session
