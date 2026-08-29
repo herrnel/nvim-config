@@ -25,6 +25,11 @@ local setup_ok, _ = pcall(nvim_tree.setup, {
   view = {
     width = 30,
   },
+  -- Auto-follow the currently focused buffer in the tree.
+  update_focused_file = {
+    enable = true,
+    update_root = false,
+  },
   renderer = {
     group_empty = true,
     icons = {
@@ -59,5 +64,6 @@ end
 -- Recommended mappings
 vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = "Toggle file explorer" })
 vim.keymap.set('n', '<leader>fe', '<cmd>NvimTreeFocus<CR>', { desc = "Focus file explorer" })
+vim.keymap.set('n', '<leader>ef', '<cmd>NvimTreeFindFile<CR>', { desc = "Reveal current file in explorer" })
 
 print("File explorer initialized!")
