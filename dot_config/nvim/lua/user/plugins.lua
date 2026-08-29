@@ -142,5 +142,18 @@ return require("lazy").setup({
       end
     end,
   },
+
+
+  -- For displaying inline diagnostic messages with customizable styles and icons.
+  {
+      "rachartier/tiny-inline-diagnostic.nvim",
+      event = "VeryLazy",
+      priority = 1000,
+      config = function()
+          require("user.tiny-inline-diagnostic") -- runs the customized setup({...})
+          vim.diagnostic.config({ virtual_text = false }) -- Disable Neovim's default virtual text diagnostics
+      end,
+  },
+
 })
 

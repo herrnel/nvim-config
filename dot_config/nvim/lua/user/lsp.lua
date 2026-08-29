@@ -18,8 +18,7 @@ require("mason-lspconfig").setup({
     "pyright",     -- Python
     "ts_ls",       -- TypeScript/JavaScript
     "rust_analyzer", -- Rust
-    -- "gopls",       -- Go (install Go separately, or `apt install gopls`)
-    -- "clangd",      -- C/C++ (no aarch64 build in Mason; using system /usr/bin/clangd)
+    -- "gopls",       -- Go (install Go separately, or `apt install gopls`) -- "clangd",      -- C/C++ (no aarch64 build in Mason; using system /usr/bin/clangd)
   },
   automatic_installation = true,
   -- Let mason-lspconfig auto-enable installed servers via vim.lsp.enable().
@@ -85,10 +84,7 @@ end
 
 -- Configure diagnostic display
 vim.diagnostic.config({
-  virtual_text = {
-    prefix = '●', -- Could be '■', '▎', 'x'
-    source = "if_many",
-  },
+  virtual_text = false,
   float = {
     source = true,
     border = "rounded",

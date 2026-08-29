@@ -15,6 +15,8 @@ require('user.treesitter') -- Set up before LSP for better highlighting
 require('user.lsp')  -- Depends on language servers being available
 require('user.completion') -- Depends on LSP configuration
 require('user.telescope') -- Often integrates with LSP
+-- tiny-inline-diagnostic is configured inside its lazy.nvim spec (see user/plugins.lua)
+-- which requires 'user.tiny-inline-diagnostic' at the correct time.
 
 -- Optional UI / helpers
 require('user.whichkey')
