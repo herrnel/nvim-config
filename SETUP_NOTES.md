@@ -54,28 +54,23 @@ shells, etc.) and is deployed with [chezmoi](https://www.chezmoi.io/).
   (matches the `vim-tmux-navigator` plugin).
 - Custom orange/white status theme.
 - tpm + `tmux-sensible`.
+- `tmux-resurrect` + `tmux-continuum`: sessions save every 15 minutes and
+  restore automatically when tmux starts. Recent pane output is captured too.
 
 ### `dev-session` launcher (`~/.local/bin/dev-session`)
-Not deployed by chezmoi (it's a user script, not a config). Contents:
+Managed by chezmoi at `dot_local/bin/executable_dev-session`. It creates the
+three-pane nvim/shell/pi layout and manages restored sessions:
 
 ```bash
-#!/usr/bin/env bash
-# Spin up a tmux session: nvim left, pi right.
-# Usage: dev-session [session-name]   (default: basename of $PWD)
-SESSION="${1:-$(basename "$PWD")}"
-if tmux has-session -t "$SESSION" 2>/dev/null; then
-  exec tmux attach -t "$SESSION"
-fi
-tmux new-session -d -s "$SESSION" -n main -c "$PWD"
-tmux send-keys    -t "$SESSION:main" 'nvim .' C-m
-tmux split-window -h -t "$SESSION:main" -c "$PWD"
-tmux send-keys    -t "$SESSION:main.1" 'pi' C-m
-tmux select-pane  -t "$SESSION:main.0"
-exec tmux attach  -t "$SESSION"
+dev-session              # open/create a session named after the current directory
+dev-session NAME         # open/create NAME
+dev-session ls           # list sessions restored by tmux-continuum
+dev-session open NAME    # open an existing session
+dev-session rm NAME      # remove a session and update the saved snapshot
+dev-session help
 ```
 
-`chmod +x ~/.local/bin/dev-session`. Requires `~/.local/bin` on `PATH` (already
-in `~/.zshrc` and `~/.bashrc`).
+Requires `~/.local/bin` on `PATH` (already in `~/.zshrc` and `~/.bashrc`).
 
 ---
 
@@ -154,10 +149,9 @@ nvim --headless "+Lazy! restore" +qa
 # Parsers compile asynchronously on first launch; or force them synchronously:
 #   nvim --headless "+lua require('nvim-treesitter').install({'lua','python','rust','go','javascript','typescript','tsx','html','css','json','yaml','toml','markdown','markdown_inline','bash','vim','vimdoc','query'}):wait(300000)" +qa
 
-# 6. dev-session launcher
-mkdir -p ~/.local/bin
-# (paste the script above into ~/.local/bin/dev-session, then:)
-chmod +x ~/.local/bin/dev-session
+# 6. dev-session is deployed automatically by chezmoi.
+# Install the tmux plugins declared in ~/.tmux.conf:
+~/.tmux/plugins/tpm/bin/install_plugins
 ```
 
 ### Pulling changes from another machine
@@ -179,7 +173,10 @@ chezmoi apply --dry-run -v
 
 ```bash
 cd <some-project>
-dev-session               # creates tmux session "<project>": nvim left, pi right
+dev-session               # creates/opens "<project>": nvim + shell left, pi right
+dev-session ls            # list restored/running sessions
+dev-session open <name>   # open one from the list
+dev-session rm <name>     # permanently remove one
 ```
 
 Inside:
