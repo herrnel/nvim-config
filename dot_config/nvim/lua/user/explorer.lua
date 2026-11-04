@@ -64,6 +64,9 @@ end
 -- Recommended mappings
 vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = "Toggle file explorer" })
 vim.keymap.set('n', '<leader>fe', '<cmd>NvimTreeFocus<CR>', { desc = "Focus file explorer" })
-vim.keymap.set('n', '<leader>ef', '<cmd>NvimTreeFindFile<CR>', { desc = "Reveal current file in explorer" })
+-- Keep explorer actions off the <leader>e prefix. When both <leader>e and
+-- <leader>ef existed, Neovim waited up to 'timeoutlen' before deciding whether
+-- to toggle the tree, which made opening and closing it always feel delayed.
+vim.keymap.set('n', '<leader>ft', '<cmd>NvimTreeFindFile<CR>', { desc = "Reveal current file in explorer" })
 
 print("File explorer initialized!")

@@ -68,6 +68,7 @@ Useful commands:
 | `rose-pine/neovim`                       | Colorscheme (fallback #1)                |
 | `vague2k/vague.nvim`                     | Colorscheme (**primary**)                |
 | `christoomey/vim-tmux-navigator`         | `Ctrl-h/j/k/l` between nvim & tmux panes |
+| `karb94/neoscroll.nvim`                  | Animated scrolling in terminal Neovim    |
 | `MeanderingProgrammer/render-markdown`   | Pretty in-buffer markdown rendering      |
 
 ## Theme
@@ -136,3 +137,4 @@ nvim                       # lazy.nvim auto-installs and syncs plugins on first 
 | Edits keep disappearing          | You edited the live file; chezmoi reverted it. `chezmoi re-add`.|
 | LSP not attaching                | `:Mason` to install server; `:LspInfo` to inspect.              |
 | `Ctrl-h/j/k/l` doesn't navigate  | Confirm `vim-tmux-navigator` plugin loaded **and** the matching tmux bindings in `~/.tmux.conf`. |
+| Explorer toggle feels delayed    | Ensure no longer mapping starts with `<leader>e`; it makes Neovim wait for `'timeoutlen'`. Reveal-current-file is `<leader>ft`. |

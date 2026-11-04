@@ -94,6 +94,28 @@ return require("lazy").setup({
      "christoomey/vim-tmux-navigator", lazy = false 
   },
 
+  -- Animated scrolling that works in terminal Neovim (including iTerm/tmux).
+  -- This remains character-cell based; pixel-level animation requires a GUI
+  -- frontend such as Neovide.
+  {
+    "karb94/neoscroll.nvim",
+    event = "VeryLazy",
+    opts = {
+      mappings = {
+        "<C-u>", "<C-d>",
+        "<C-b>", "<C-f>",
+        "<C-y>", "<C-e>",
+        "zt", "zz", "zb",
+      },
+      duration_multiplier = 0.6,
+      easing = "quadratic",
+      hide_cursor = true,
+      stop_eof = true,
+      respect_scrolloff = false,
+      performance_mode = false,
+    },
+  },
+
   -- Pretty in-buffer markdown rendering
   {
     "MeanderingProgrammer/render-markdown.nvim",

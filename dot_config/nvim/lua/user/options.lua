@@ -38,6 +38,9 @@ vim.o.cursorline = false
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.o.scrolloff = 10
+-- Scroll through wrapped lines by screen row. neoscroll.nvim handles animated
+-- page/half-page scrolling in a terminal; this built-in option complements it.
+vim.o.smoothscroll = true
 
 -- Show <tab> and trailing spaces
 vim.o.list = true
